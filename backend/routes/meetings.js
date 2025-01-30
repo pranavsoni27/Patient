@@ -16,32 +16,50 @@ router.get('/', async (req, res) => {
 // POST - Create a new meeting request
 router.post('/add', async (req, res) => {
     try {
-        const { visitorName, patientName, relation, numVisitors, appointmentDate, appointmentTime, duration, mode } = req.body;
+        const upload = req.app.locals.upload;
         
-        // Validate required fields
-        if (!visitorName || !patientName || !relation || !appointmentDate || !appointmentTime || !duration || !mode) {
-            return res.status(400).json({ message: 'All fields are required' });
-        }
+        upload.single('photoId')(req, res, async function(err) {
+            if (err) {
+                return res.status(400).json({ message: err.message });
+            }
 
-        // Validate number of visitors
-        if (numVisitors < 1 || numVisitors > 5) {
-            return res.status(400).json({ message: 'Number of visitors must be between 1 and 5' });
-        }
+            if (!req.file) {
+                return res.status(400).json({ message: 'Photo ID is required' });
+            }
 
-        const newMeeting = new Meeting({
-            visitorName,
-            patientName,
-            relation,
-            numVisitors,
-            appointmentDate,
-            appointmentTime,
-            duration,
-            mode,
-            status: 'pending'
+            const { 
+                visitorName, patientName, relation, numVisitors, 
+                appointmentDate, appointmentTime, duration, mode 
+            } = req.body;
+
+            // Validate required fields
+            if (!visitorName || !patientName || !relation || !appointmentDate || 
+                !appointmentTime || !duration || !mode) {
+                return res.status(400).json({ message: 'All fields are required' });
+            }
+
+            // Validate number of visitors
+            const visitors = parseInt(numVisitors);
+            if (visitors < 1 || visitors > 5) {
+                return res.status(400).json({ message: 'Number of visitors must be between 1 and 5' });
+            }
+
+            const newMeeting = new Meeting({
+                visitorName,
+                patientName,
+                relation,
+                numVisitors: visitors,
+                appointmentDate,
+                appointmentTime,
+                duration,
+                mode,
+                status: 'pending',
+                photoId: req.file.filename
+            });
+
+            const savedMeeting = await newMeeting.save();
+            res.status(201).json(savedMeeting);
         });
-
-        const savedMeeting = await newMeeting.save();
-        res.status(201).json(savedMeeting);
     } catch (error) {
         console.error('Error creating meeting:', error);
         res.status(500).json({ message: 'Error creating meeting request' });
@@ -77,12 +95,23 @@ router.put('/:id/status', async (req, res) => {
 // DELETE - Delete a meeting
 router.delete('/:id', async (req, res) => {
     try {
-        const meeting = await Meeting.findByIdAndDelete(req.params.id);
+        const meeting = await Meeting.findById(req.params.id);
         
         if (!meeting) {
             return res.status(404).json({ message: 'Meeting not found' });
         }
 
+        // Delete the photo file if it exists
+        if (meeting.photoId) {
+            const fs = require('fs');
+            const path = require('path');
+            const photoPath = path.join(__dirname, '../uploads', meeting.photoId);
+            if (fs.existsSync(photoPath)) {
+                fs.unlinkSync(photoPath);
+            }
+        }
+
+        await Meeting.findByIdAndDelete(req.params.id);
         res.json({ message: 'Meeting deleted successfully' });
     } catch (error) {
         console.error('Error deleting meeting:', error);

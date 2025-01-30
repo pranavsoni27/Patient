@@ -40,35 +40,53 @@ document.addEventListener('DOMContentLoaded', function() {
     visitorForm.addEventListener('submit', async (e) => {
         e.preventDefault();
 
-        const formData = {
-            visitorName: document.getElementById('visitorName').value,
-            patientName: document.getElementById('patientName').value,
-            relation: document.getElementById('relation').value,
-            numVisitors: parseInt(document.getElementById('numVisitors').value),
-            appointmentDate: document.getElementById('appointmentDate').value,
-            appointmentTime: document.getElementById('appointmentTime').value,
-            duration: document.getElementById('duration').value,
-            mode: document.getElementById('mode').value
-        };
+        const formData = new FormData();
+        formData.append('visitorName', document.getElementById('visitorName').value);
+        formData.append('patientName', document.getElementById('patientName').value);
+        formData.append('relation', document.getElementById('relation').value);
+        formData.append('numVisitors', document.getElementById('numVisitors').value);
+        formData.append('appointmentDate', document.getElementById('appointmentDate').value);
+        formData.append('appointmentTime', document.getElementById('appointmentTime').value);
+        formData.append('duration', document.getElementById('duration').value);
+        formData.append('mode', document.getElementById('mode').value);
+        formData.append('photoId', document.getElementById('photoId').files[0]);
 
         try {
             const response = await fetch('http://localhost:5000/api/meetings/add', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(formData)
+                body: formData
             });
 
             if (response.ok) {
-                alert('Meeting request submitted successfully!');
-                window.location.href = 'index.html';
+                // Disable the submit button
+                document.querySelector('button[type="submit"]').disabled = true;
+                
+                // Show success popup and set timer for redirect
+                const { overlay, popup } = showPopup('Meeting request submitted successfully!', 'success');
+                
+                // Make sure popup is visible
+                popup.style.opacity = '1';
+                overlay.style.opacity = '1';
+                
+                // Set a timer to close popup and redirect after 5 seconds
+                setTimeout(() => {
+                    // Start fade out
+                    popup.style.opacity = '0';
+                    overlay.style.opacity = '0';
+                    
+                    // Wait for fade out animation before redirect
+                    setTimeout(() => {
+                        if (overlay && overlay.parentNode) overlay.parentNode.removeChild(overlay);
+                        if (popup && popup.parentNode) popup.parentNode.removeChild(popup);
+                        window.location.href = 'index.html';
+                    }, 300);
+                }, 5000);
             } else {
-                alert('Error submitting meeting request. Please try again.');
+                showPopup('Error submitting meeting request. Please try again.', 'error');
             }
         } catch (error) {
             console.error('Error:', error);
-            alert('Error submitting meeting request. Please try again.');
+            showPopup('Error submitting meeting request. Please try again.', 'error');
         }
     });
 });

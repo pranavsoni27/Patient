@@ -1,0 +1,112 @@
+.custom-popup {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: white;
+    padding: 30px;
+    border-radius: 15px;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+    z-index: 1000;
+    text-align: center;
+    min-width: 300px;
+    opacity: 0;
+    transition: opacity 0.3s ease-in-out;
+    animation: popupIn 0.3s ease-out forwards;
+}
+
+.popup-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 999;
+    opacity: 0;
+    transition: opacity 0.3s ease-in-out;
+    backdrop-filter: blur(3px);
+    animation: overlayIn 0.3s ease-out forwards;
+}
+
+.success-icon {
+    color: #28a745;
+    font-size: 64px;
+    margin-bottom: 20px;
+    display: block;
+    animation: iconBounce 0.5s ease-out;
+}
+
+.error-icon {
+    color: #dc3545;
+    font-size: 64px;
+    margin-bottom: 20px;
+    display: block;
+    animation: iconBounce 0.5s ease-out;
+}
+
+.popup-message {
+    margin: 15px 0;
+    font-size: 20px;
+    font-weight: 500;
+}
+
+.popup-message.success {
+    color: #28a745;
+}
+
+.popup-message.error {
+    color: #dc3545;
+}
+
+@keyframes popupIn {
+    0% {
+        transform: translate(-50%, -60%);
+        opacity: 0;
+    }
+    100% {
+        transform: translate(-50%, -50%);
+        opacity: 1;
+    }
+}
+
+@keyframes overlayIn {
+    0% {
+        opacity: 0;
+    }
+    100% {
+        opacity: 1;
+    }
+}
+
+@keyframes iconBounce {
+    0% {
+        transform: scale(0.3);
+    }
+    50% {
+        transform: scale(1.2);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+/* Button styles for confirmation popups */
+.custom-popup .btn-group {
+    margin-top: 20px;
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+}
+
+.custom-popup .btn {
+    padding: 8px 20px;
+    font-weight: 500;
+    min-width: 100px;
+    transition: all 0.2s ease;
+}
+
+.custom-popup .btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
