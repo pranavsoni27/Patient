@@ -53,8 +53,7 @@ app.use(cors({
             'http://localhost:3000',
             'http://127.0.0.1:5000',
             'http://127.0.0.1:3000',
-            'https://patient-meeting.netlify.app', // Add your Netlify domain
-            'https://hospital-meeting-scheduler.onrender.com' // Add your backend domain
+            'https://quickpatientmeeting.netlify.app'
         ];
         
         if(allowedOrigins.indexOf(origin) === -1){
