@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: patient-meeting
+    env: node
+    buildCommand: cd backend && npm install
+    startCommand: cd backend && node server.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: MONGODB_URI
+        sync: false # You'll set this in Render dashboard
