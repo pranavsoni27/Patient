@@ -40,6 +40,10 @@ document.addEventListener('DOMContentLoaded', function() {
     visitorForm.addEventListener('submit', async (e) => {
         e.preventDefault();
 
+        // Disable submit button to prevent double submission
+        const submitButton = document.querySelector('button[type="submit"]');
+        submitButton.disabled = true;
+
         const formData = new FormData();
         formData.append('visitorName', document.getElementById('visitorName').value);
         formData.append('patientName', document.getElementById('patientName').value);
@@ -49,18 +53,22 @@ document.addEventListener('DOMContentLoaded', function() {
         formData.append('appointmentTime', document.getElementById('appointmentTime').value);
         formData.append('duration', document.getElementById('duration').value);
         formData.append('mode', document.getElementById('mode').value);
-        formData.append('photoId', document.getElementById('photoId').files[0]);
+
+        const photoInput = document.getElementById('photoId');
+        if (photoInput.files.length > 0) {
+            formData.append('photoId', photoInput.files[0]);
+        }
 
         try {
             const response = await fetch(`${config.apiUrl}/api/meetings/add`, {
                 method: 'POST',
-                body: formData
+                body: formData,
+                credentials: 'include'
             });
 
+            const data = await response.json();
+
             if (response.ok) {
-                // Disable the submit button
-                document.querySelector('button[type="submit"]').disabled = true;
-                
                 // Show success popup and set timer for redirect
                 const { overlay, popup } = showPopup('Meeting request submitted successfully!', 'success');
                 
@@ -82,12 +90,15 @@ document.addEventListener('DOMContentLoaded', function() {
                     }, 300);
                 }, 5000);
             } else {
-                const errorData = await response.json();
-                showPopup(errorData.message || 'Error submitting meeting request. Please try again.', 'error');
+                // Re-enable submit button on error
+                submitButton.disabled = false;
+                showPopup(data.message || 'Error submitting meeting request. Please try again.', 'error');
             }
         } catch (error) {
             console.error('Error:', error);
-            showPopup('Error submitting meeting request. Please try again.', 'error');
+            // Re-enable submit button on error
+            submitButton.disabled = false;
+            showPopup('Network error. Please check your connection and try again.', 'error');
         }
     });
 });

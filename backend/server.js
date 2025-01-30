@@ -36,11 +36,39 @@ const upload = multer({
             return cb(null, true);
         }
         cb(new Error('Only .png, .jpg and .jpeg format allowed!'));
+    },
+    limits: {
+        fileSize: 5 * 1024 * 1024 // 5MB limit
     }
 });
 
+// Configure CORS
+app.use(cors({
+    origin: function(origin, callback) {
+        // Allow requests with no origin (like mobile apps or curl requests)
+        if(!origin) return callback(null, true);
+        
+        const allowedOrigins = [
+            'http://localhost:5000',
+            'http://localhost:3000',
+            'http://127.0.0.1:5000',
+            'http://127.0.0.1:3000',
+            'https://patient-meeting.netlify.app', // Add your Netlify domain
+            'https://hospital-meeting-scheduler.onrender.com' // Add your backend domain
+        ];
+        
+        if(allowedOrigins.indexOf(origin) === -1){
+            var msg = 'The CORS policy for this site does not allow access from the specified Origin.';
+            return callback(new Error(msg), false);
+        }
+        return callback(null, true);
+    },
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    credentials: true
+}));
+
 // Middleware
-app.use(cors());
 app.use(express.json());
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
@@ -74,8 +102,26 @@ app.use('/api/meetings', meetingsRouter);
 
 // Basic error handling
 app.use((err, req, res, next) => {
-    console.error(err.stack);
-    res.status(500).send('Something broke!');
+    console.error('Error details:', {
+        message: err.message,
+        stack: err.stack
+    });
+    
+    if (err instanceof multer.MulterError) {
+        if (err.code === 'LIMIT_FILE_SIZE') {
+            return res.status(400).json({
+                message: 'File is too large. Maximum size is 5MB'
+            });
+        }
+        return res.status(400).json({
+            message: 'File upload error: ' + err.message
+        });
+    }
+    
+    res.status(500).json({
+        message: 'An error occurred while processing your request',
+        error: process.env.NODE_ENV === 'development' ? err.message : 'Internal server error'
+    });
 });
 
 const PORT = process.env.PORT || 5000;
