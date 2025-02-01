@@ -5,65 +5,41 @@ const Meeting = require('../models/meeting');
 // GET - Get all meetings
 router.get('/', async (req, res) => {
     try {
-        const meetings = await Meeting.find().sort({ appointmentDate: 1, appointmentTime: 1 });
+        const meetings = await Meeting.find().sort({ createdAt: -1 });
         res.json(meetings);
-    } catch (error) {
-        console.error('Error fetching meetings:', error);
-        res.status(500).json({ message: 'Error fetching meetings' });
+    } catch (err) {
+        res.status(500).json({ message: err.message });
     }
 });
 
 // POST - Create a new meeting request
 router.post('/add', async (req, res) => {
-    try {
-        const upload = req.app.locals.upload;
-        
-        upload.single('photoId')(req, res, async function(err) {
-            if (err) {
-                return res.status(400).json({ message: err.message });
-            }
+    const upload = req.app.locals.upload.single('photoId');
 
-            if (!req.file) {
-                return res.status(400).json({ message: 'Photo ID is required' });
-            }
+    upload(req, res, async function(err) {
+        if (err) {
+            return res.status(400).json({ message: err.message });
+        }
 
-            const { 
-                visitorName, patientName, relation, numVisitors, 
-                appointmentDate, appointmentTime, duration, mode 
-            } = req.body;
-
-            // Validate required fields
-            if (!visitorName || !patientName || !relation || !appointmentDate || 
-                !appointmentTime || !duration || !mode) {
-                return res.status(400).json({ message: 'All fields are required' });
-            }
-
-            // Validate number of visitors
-            const visitors = parseInt(numVisitors);
-            if (visitors < 1 || visitors > 5) {
-                return res.status(400).json({ message: 'Number of visitors must be between 1 and 5' });
-            }
-
-            const newMeeting = new Meeting({
-                visitorName,
-                patientName,
-                relation,
-                numVisitors: visitors,
-                appointmentDate,
-                appointmentTime,
-                duration,
-                mode,
-                status: 'pending',
-                photoId: req.file.filename
-            });
-
-            const savedMeeting = await newMeeting.save();
-            res.status(201).json(savedMeeting);
+        const meeting = new Meeting({
+            visitorName: req.body.visitorName,
+            patientName: req.body.patientName,
+            relation: req.body.relation,
+            numVisitors: req.body.numVisitors,
+            appointmentDate: req.body.appointmentDate,
+            appointmentTime: req.body.appointmentTime,
+            duration: req.body.duration,
+            mode: req.body.mode,
+            photoId: req.file ? req.file.filename : null
         });
-    } catch (error) {
-        console.error('Error creating meeting:', error);
-        res.status(500).json({ message: 'Error creating meeting request' });
-    }
+
+        try {
+            const newMeeting = await meeting.save();
+            res.status(201).json(newMeeting);
+        } catch (err) {
+            res.status(400).json({ message: err.message });
+        }
+    });
 });
 
 // PUT - Update meeting status
@@ -96,7 +72,6 @@ router.put('/:id/status', async (req, res) => {
 router.delete('/:id', async (req, res) => {
     try {
         const meeting = await Meeting.findById(req.params.id);
-        
         if (!meeting) {
             return res.status(404).json({ message: 'Meeting not found' });
         }
@@ -111,11 +86,10 @@ router.delete('/:id', async (req, res) => {
             }
         }
 
-        await Meeting.findByIdAndDelete(req.params.id);
+        await meeting.deleteOne();
         res.json({ message: 'Meeting deleted successfully' });
-    } catch (error) {
-        console.error('Error deleting meeting:', error);
-        res.status(500).json({ message: 'Error deleting meeting' });
+    } catch (err) {
+        res.status(500).json({ message: err.message });
     }
 });
 

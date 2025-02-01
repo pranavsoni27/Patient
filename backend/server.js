@@ -8,6 +8,14 @@ require('dotenv').config();
 
 const app = express();
 
+// Configure CORS to allow all origins and methods
+app.use(cors({
+    origin: '*',
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
+    credentials: false
+}));
+
 // Create uploads directory if it doesn't exist
 const uploadsDir = path.join(__dirname, 'uploads');
 if (!fs.existsSync(uploadsDir)) {
@@ -41,31 +49,6 @@ const upload = multer({
         fileSize: 5 * 1024 * 1024 // 5MB limit
     }
 });
-
-// Configure CORS
-app.use(cors({
-    origin: function(origin, callback) {
-        // Allow requests with no origin (like mobile apps or curl requests)
-        if(!origin) return callback(null, true);
-        
-        const allowedOrigins = [
-            'http://localhost:5000',
-            'http://localhost:3000',
-            'http://127.0.0.1:5000',
-            'http://127.0.0.1:3000',
-            'https://quickpatientmeeting.netlify.app'
-        ];
-        
-        if(allowedOrigins.indexOf(origin) === -1){
-            var msg = 'The CORS policy for this site does not allow access from the specified Origin.';
-            return callback(new Error(msg), false);
-        }
-        return callback(null, true);
-    },
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
-    credentials: true
-}));
 
 // Middleware
 app.use(express.json());

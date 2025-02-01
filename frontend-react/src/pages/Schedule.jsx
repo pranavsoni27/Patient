@@ -136,24 +136,27 @@ const Schedule = () => {
       const response = await fetch('http://localhost:5000/api/meetings/add', {
         method: 'POST',
         body: formDataToSend,
-        headers: {
-          'Accept': 'application/json',
-        },
         mode: 'cors',
-        credentials: 'include'
+        credentials: 'omit',
+        headers: {
+          'Accept': '*/*',
+        }
       });
 
       if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.message || 'Error submitting form');
+        const errorData = await response.json().catch(() => ({ message: 'Network error occurred' }));
+        throw new Error(errorData.message || 'Failed to submit form');
       }
 
+      const data = await response.json();
+      
       setNotification({
         open: true,
         message: 'Appointment request submitted successfully!',
         type: 'success'
       });
 
+      // Clear form
       setFormData({
         visitorName: '',
         patientName: '',
@@ -165,7 +168,14 @@ const Schedule = () => {
         mode: '',
         photoId: null
       });
+      
+      // Clear file input
+      const fileInput = document.querySelector('input[type="file"]');
+      if (fileInput) {
+        fileInput.value = '';
+      }
     } catch (err) {
+      console.error('Fetch error:', err);
       setNotification({
         open: true,
         message: err.message || 'Error submitting form. Please try again.',
@@ -222,7 +232,7 @@ const Schedule = () => {
                 <Grid item xs={12} sm={6}>
                   <TextField
                     fullWidth
-                    label="Visitor Name"
+                    label="Your Name"
                     name="visitorName"
                     value={formData.visitorName}
                     onChange={handleChange}
